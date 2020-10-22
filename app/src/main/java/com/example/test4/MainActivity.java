@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -32,9 +33,12 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    DAO dao = new DAO();
+    List<ContactUser> userList ;
 
-    List<UserInfo> userInfos = new ArrayList<>(Arrays.asList(new UserInfo("张三", "12345"),
-            new UserInfo("李四", "12345"), new UserInfo("王五", "12345")));
+//    List<UserInfo> userInfos = new ArrayList<>(Arrays.asList(new UserInfo("张三", "12345"),
+//            new UserInfo("李四", "12345"), new UserInfo("王五", "12345")));
+//    DBHelper
 
     myBaseAdapter myAdapter = new myBaseAdapter();
     @Override
@@ -42,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        userList = dao.getContactUsers(MainActivity.this);
 
 
         ListView listView = findViewById(R.id.listView_main);
@@ -52,15 +57,15 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String userName = userInfos.get(position).getUsername();
-                String phoneNumber = userInfos.get(position).getPhoneNumber();
+                String userName = userList.get(position).getName();
+                String phoneNumber = userList.get(position).getTel();
                 Intent intent = new Intent(MainActivity.this,ContactDetails.class);
                 Bundle bundle = new Bundle();
                 bundle.putString("userName", userName);
                 bundle.putString("phoneNumber", phoneNumber);
                 intent.putExtra("userInfo", bundle);
                 startActivity(intent);
-                Toast.makeText(MainActivity.this,"点击的是：  "+userInfos.get(position).getUsername(),
+                Toast.makeText(MainActivity.this,"点击的是：  "+userList.get(position).getName(),
                         Toast.LENGTH_LONG).show();
             }
         });
@@ -97,7 +102,12 @@ public class MainActivity extends AppCompatActivity {
                                 String usr_name = name.getText().toString();
                                 String usr_phone = phoneNumber.getText().toString();
                                 if (!usr_name.equals("")&&!usr_phone.equals("")) {
-                                    userInfos.add(new UserInfo(usr_name,usr_phone));
+//                                    userInfos.add(new UserInfo(usr_name,usr_phone));
+                                    ContactUser contactUser = new ContactUser(usr_name,usr_phone);
+                                    dao.insertContactInfo(MainActivity.this,contactUser);
+                                    userList.clear();
+                                    userList.addAll(dao.getContactUsers(MainActivity.this));
+                                    Log.d("userList_add=", userList.toString());
                                     myAdapter.notifyDataSetChanged();
                                     Toast.makeText(MainActivity.this,
                                              usr_name + ": " + usr_phone+"  添加成功！",
@@ -128,8 +138,15 @@ public class MainActivity extends AppCompatActivity {
                         .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                String userName = userInfos.get(position).getUsername();
-                                userInfos.remove(position);
+                                String userName = userList.get(position).getName();
+                                String tel = userList.get(position).getTel();
+                                ContactUser contactUser = new ContactUser(userName, tel);
+//                                userInfos.remove(position);
+                                dao.deleteContactUser(MainActivity.this,
+                                        dao.getId(MainActivity.this,contactUser));
+                                userList.clear();
+                                userList.addAll(dao.getContactUsers(MainActivity.this));
+                                Log.d("userList_add=", userList.toString());
                                 myAdapter.notifyDataSetChanged();
                                 Toast.makeText(MainActivity.this,
                                         "联系人:  "+userName+"  " +
@@ -155,8 +172,18 @@ public class MainActivity extends AppCompatActivity {
                                 String userName = et_userName.getText().toString();
                                 String phoneNumber = et_phoneNumber.getText().toString();
                                 if (!userName.equals("")&&!phoneNumber.equals("")) {
-                                    userInfos.get(position).setUsername(userName);
-                                    userInfos.get(position).setPhoneNumber(phoneNumber);
+//                                    userInfos.get(position).setUsername(userName);
+//                                    userInfos.get(position).setPhoneNumber(phoneNumber);
+                                    String oldName = userList.get(position).getName();
+                                    String oldTel = userList.get(position).getTel();
+                                    int id = dao.getId(MainActivity.this, new ContactUser(oldName
+                                            ,oldTel));
+                                    ContactUser contactUser = new ContactUser(userName, phoneNumber);
+                                    contactUser.set_id(id);
+                                    dao.updateContactUser(MainActivity.this,contactUser);
+                                    userList.clear();
+                                    userList.addAll(dao.getContactUsers(MainActivity.this));
+                                    Log.d("userList=", userList.toString());
                                     myAdapter.notifyDataSetChanged();
                                     Toast.makeText(MainActivity.this, et_userName.getText().toString() + " - " + et_phoneNumber.getText().toString() + "  修改成功！", Toast.LENGTH_LONG).show();
                                 }
@@ -167,8 +194,8 @@ public class MainActivity extends AppCompatActivity {
                 //alertDialog.show();根据组件id获取内容需要等待这个组件所在的view生成之后再获取，否则获取到的是空指针
                 EditText et_userName = alertDialog.findViewById(R.id.update_name);
                 EditText et_phoneNumber = alertDialog.findViewById(R.id.update_phoneNumber);
-                et_userName.setText(userInfos.get(position).getUsername());
-                et_phoneNumber.setText(userInfos.get(position).getPhoneNumber());
+                et_userName.setText(userList.get(position).getName());
+                et_phoneNumber.setText(userList.get(position).getTel());
                 et_phoneNumber.setInputType(InputType.TYPE_CLASS_NUMBER);
                 break;
 
@@ -181,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int getCount() {
-            return userInfos.size();
+            return userList.size();
         }
 
         @Override
@@ -200,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
                 convertView  = View.inflate(MainActivity.this, R.layout.base_item, null);
             }
             TextView textView = convertView.findViewById(R.id.tv_item);
-            textView.setText(userInfos.get(position).getUsername());
+            textView.setText(userList.get(position).getName());
             return convertView;
         }
     }
