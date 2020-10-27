@@ -36,10 +36,6 @@ public class MainActivity extends AppCompatActivity {
     DAO dao = new DAO();
     List<ContactUser> userList ;
 
-//    List<UserInfo> userInfos = new ArrayList<>(Arrays.asList(new UserInfo("张三", "12345"),
-//            new UserInfo("李四", "12345"), new UserInfo("王五", "12345")));
-//    DBHelper
-
     myBaseAdapter myAdapter = new myBaseAdapter();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +98,6 @@ public class MainActivity extends AppCompatActivity {
                                 String usr_name = name.getText().toString();
                                 String usr_phone = phoneNumber.getText().toString();
                                 if (!usr_name.equals("")&&!usr_phone.equals("")) {
-//                                    userInfos.add(new UserInfo(usr_name,usr_phone));
                                     ContactUser contactUser = new ContactUser(usr_name,usr_phone);
                                     dao.insertContactInfo(MainActivity.this,contactUser);
                                     userList.clear();
